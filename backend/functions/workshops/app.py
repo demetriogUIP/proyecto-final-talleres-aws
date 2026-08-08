@@ -1,0 +1,1 @@
+# Lambda principal para gestión de talleres

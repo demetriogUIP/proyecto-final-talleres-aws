@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  Proyecto Final - Gestión de Talleres de Formación Profesional.
+  Infraestructura serverless desarrollada con AWS SAM.
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 10
+    MemorySize: 256
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+
+Resources:
+
+  WorkshopsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub workshops-${Environment}
+      BillingMode: PAY_PER_REQUEST
+
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+      Tags:
+        - Key: Project
+          Value: Workshops
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+
+  WorkshopsTableName:
+    Description: Nombre de la tabla DynamoDB de talleres
+    Value: !Ref WorkshopsTable
+
+  WorkshopsTableArn:
+    Description: ARN de la tabla DynamoDB
+    Value: !GetAtt WorkshopsTable.Arn

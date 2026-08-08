@@ -1,0 +1,45 @@
+# AWS
+.aws-sam/
+samconfig.toml
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporales
+*.tmp
+*.temp
+
+# Credenciales
+credentials
+credentials.json
+*.pem
+*.key
+
+# Historial local de VS Code
+.history/
