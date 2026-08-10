@@ -59,6 +59,70 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
+  WorkshopsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/functions/workshops/
+      Handler: app.lambda_handler
+
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WorkshopsTable
+
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref WorkshopsTable
+
+      Events:
+        GetWorkshops:
+          Type: Api
+          Properties:
+            Path: /workshops
+            Method: get
+
+        GetWorkshopById:
+          Type: Api
+          Properties:
+            Path: /workshops/{id}
+            Method: get
+
+        CreateWorkshop:
+          Type: Api
+          Properties:
+            Path: /workshops
+            Method: post
+
+        UpdateWorkshop:
+          Type: Api
+          Properties:
+            Path: /workshops/{id}
+            Method: put
+
+        DeleteWorkshop:
+          Type: Api
+          Properties:
+            Path: /workshops/{id}
+            Method: delete
+
+  WorkshopsUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub workshops-users-${Environment}
+
+      UsernameAttributes:
+        - email
+
+      AutoVerifiedAttributes:
+        - email
+
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+
 Outputs:
 
   WorkshopsTableName:
@@ -66,5 +130,17 @@ Outputs:
     Value: !Ref WorkshopsTable
 
   WorkshopsTableArn:
-    Description: ARN de la tabla DynamoDB
+    Description: ARN de la tabla DynamoDB de talleres
     Value: !GetAtt WorkshopsTable.Arn
+
+  WorkshopsFunctionArn:
+    Description: ARN de la función Lambda de talleres
+    Value: !GetAtt WorkshopsFunction.Arn
+
+  WorkshopsUserPoolId:
+    Description: ID del Cognito User Pool
+    Value: !Ref WorkshopsUserPool
+
+  WorkshopsApiUrl:
+    Description: URL de la API REST de talleres
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/workshops"
