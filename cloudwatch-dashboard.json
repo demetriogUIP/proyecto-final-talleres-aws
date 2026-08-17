@@ -1,0 +1,147 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "API Gateway - Solicitudes",
+        "region": "us-east-1",
+        "metrics": [
+          [ "AWS/ApiGateway", "Count", "ApiName", "workshops-dev", "Stage", "Prod" ]
+        ],
+        "stat": "Sum",
+        "period": 300,
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "API Gateway - Errores 4XX y 5XX",
+        "region": "us-east-1",
+        "metrics": [
+          [ "AWS/ApiGateway", "4XXError", "ApiName", "workshops-dev", "Stage", "Prod" ],
+          [ "AWS/ApiGateway", "5XXError", "ApiName", "workshops-dev", "Stage", "Prod" ]
+        ],
+        "stat": "Sum",
+        "period": 300,
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 6,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "API Gateway - Latencia",
+        "region": "us-east-1",
+        "metrics": [
+          [ "AWS/ApiGateway", "Latency", "ApiName", "workshops-dev", "Stage", "Prod" ],
+          [ "AWS/ApiGateway", "IntegrationLatency", "ApiName", "workshops-dev", "Stage", "Prod" ]
+        ],
+        "stat": "Average",
+        "period": 300,
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 6,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Workshops Lambda - Invocaciones y Errores",
+        "region": "us-east-1",
+        "metrics": [
+          [ "AWS/Lambda", "Invocations", "FunctionName", "workshops-dev-WorkshopsFunction-ks5CEumru8Jc" ],
+          [ "AWS/Lambda", "Errors", "FunctionName", "workshops-dev-WorkshopsFunction-ks5CEumru8Jc" ]
+        ],
+        "stat": "Sum",
+        "period": 300,
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 12,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Registration Lambda - Invocaciones y Errores",
+        "region": "us-east-1",
+        "metrics": [
+          [ "AWS/Lambda", "Invocations", "FunctionName", "workshops-dev-RegistrationFunction-in8azvmTaT8X" ],
+          [ "AWS/Lambda", "Errors", "FunctionName", "workshops-dev-RegistrationFunction-in8azvmTaT8X" ]
+        ],
+        "stat": "Sum",
+        "period": 300,
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 12,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Notification Lambda - Invocaciones y Errores",
+        "region": "us-east-1",
+        "metrics": [
+          [ "AWS/Lambda", "Invocations", "FunctionName", "workshops-dev-NotificationFunction-pC29YcA39QZt" ],
+          [ "AWS/Lambda", "Errors", "FunctionName", "workshops-dev-NotificationFunction-pC29YcA39QZt" ]
+        ],
+        "stat": "Sum",
+        "period": 300,
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 18,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Reminder Lambda - Invocaciones y Errores",
+        "region": "us-east-1",
+        "metrics": [
+          [ "AWS/Lambda", "Invocations", "FunctionName", "workshops-dev-ReminderFunction-UuNuLJjrYayi" ],
+          [ "AWS/Lambda", "Errors", "FunctionName", "workshops-dev-ReminderFunction-UuNuLJjrYayi" ]
+        ],
+        "stat": "Sum",
+        "period": 300,
+        "view": "timeSeries"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 18,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Lambda - Duración y Throttles",
+        "region": "us-east-1",
+        "metrics": [
+          [ "AWS/Lambda", "Duration", "FunctionName", "workshops-dev-WorkshopsFunction-ks5CEumru8Jc" ],
+          [ "AWS/Lambda", "Throttles", "FunctionName", "workshops-dev-WorkshopsFunction-ks5CEumru8Jc" ]
+        ],
+        "stat": "Average",
+        "period": 300,
+        "view": "timeSeries"
+      }
+    }
+  ]
+}

@@ -11,6 +11,19 @@ Globals:
     Timeout: 10
     MemorySize: 256
 
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'Content-Type,Authorization'"
+      AllowOrigin: "'http://localhost:5173'"
+
+    Auth:
+      DefaultAuthorizer: CognitoAuthorizer
+      AddDefaultAuthorizerToCorsPreflight: false
+      Authorizers:
+        CognitoAuthorizer:
+          UserPoolArn: !GetAtt WorkshopsUserPool.Arn
+
 Parameters:
   Environment:
     Type: String
@@ -59,6 +72,16 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
+  WorkshopsEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Sub workshops-events-${Environment}
+
+  WorkshopsNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub workshops-notifications-${Environment}
+
   WorkshopsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -104,6 +127,139 @@ Resources:
             Path: /workshops/{id}
             Method: delete
 
+  RegistrationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/functions/registrations/
+      Handler: app.lambda_handler
+
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WorkshopsTable
+
+        - Statement:
+            - Effect: Allow
+              Action:
+                - events:PutEvents
+              Resource: !GetAtt WorkshopsEventBus.Arn
+
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref WorkshopsTable
+          EVENT_BUS_NAME: !Ref WorkshopsEventBus
+
+      Events:
+        RegisterWorkshop:
+          Type: Api
+          Properties:
+            Path: /workshops/{id}/register
+            Method: post
+
+  NotificationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/functions/notifications/
+      Handler: app.lambda_handler
+
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - sns:Publish
+              Resource: !Ref WorkshopsNotificationTopic
+
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref WorkshopsNotificationTopic
+
+  ReminderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/functions/reminders/
+      Handler: app.lambda_handler
+
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref WorkshopsTable
+
+        - Statement:
+            - Effect: Allow
+              Action:
+                - sns:Publish
+              Resource: !Ref WorkshopsNotificationTopic
+
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref WorkshopsTable
+          SNS_TOPIC_ARN: !Ref WorkshopsNotificationTopic
+
+  ReminderSchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub workshops-reminder-scheduler-${Environment}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - scheduler.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+      Policies:
+        - PolicyName: InvokeReminderFunction
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt ReminderFunction.Arn
+
+  ReminderSchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub workshops-reminder-schedule-${Environment}
+      Description: Ejecución periódica de la función de recordatorios de talleres
+
+      FlexibleTimeWindow:
+        Mode: "OFF"
+
+      ScheduleExpression: "rate(1 hour)"
+
+      State: ENABLED
+
+      Target:
+        Arn: !GetAtt ReminderFunction.Arn
+        RoleArn: !GetAtt ReminderSchedulerRole.Arn
+
+        Input: '{}'                      
+
+  WorkshopsRegistrationRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub workshops-registration-${Environment}
+      EventBusName: !Ref WorkshopsEventBus
+
+      EventPattern:
+        source:
+          - workshops.registration
+        detail-type:
+          - STUDENT_REGISTERED
+
+      Targets:
+        - Arn: !GetAtt NotificationFunction.Arn
+          Id: NotificationFunctionTarget
+
+  NotificationFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref NotificationFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt WorkshopsRegistrationRule.Arn
+
   WorkshopsUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -123,6 +279,18 @@ Resources:
           RequireNumbers: true
           RequireSymbols: false
 
+  WorkshopsUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref WorkshopsUserPool
+      ClientName: !Sub workshops-client-${Environment}
+      GenerateSecret: false
+
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+
 Outputs:
 
   WorkshopsTableName:
@@ -137,10 +305,42 @@ Outputs:
     Description: ARN de la función Lambda de talleres
     Value: !GetAtt WorkshopsFunction.Arn
 
+  RegistrationFunctionArn:
+    Description: ARN de la función Lambda de registros
+    Value: !GetAtt RegistrationFunction.Arn
+
+  WorkshopsEventBusName:
+    Description: Nombre del Event Bus de talleres
+    Value: !Ref WorkshopsEventBus
+
+  WorkshopsEventBusArn:
+    Description: ARN del Event Bus de talleres
+    Value: !GetAtt WorkshopsEventBus.Arn
+
+  WorkshopsNotificationTopicArn:
+    Description: ARN del SNS Topic de notificaciones
+    Value: !Ref WorkshopsNotificationTopic
+
+  NotificationFunctionArn:
+    Description: ARN de la función Lambda de notificaciones
+    Value: !GetAtt NotificationFunction.Arn
+
+  ReminderFunctionArn:
+    Description: ARN de la función Lambda de recordatorios
+    Value: !GetAtt ReminderFunction.Arn
+
+  ReminderScheduleArn:
+    Description: ARN del EventBridge Scheduler de recordatorios
+    Value: !GetAtt ReminderSchedule.Arn
+
   WorkshopsUserPoolId:
     Description: ID del Cognito User Pool
     Value: !Ref WorkshopsUserPool
 
+  WorkshopsUserPoolClientId:
+    Description: ID del App Client de Cognito
+    Value: !Ref WorkshopsUserPoolClient
+
   WorkshopsApiUrl:
-    Description: URL de la API REST de talleres
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/workshops"
+    Description: URL base de la API REST de talleres
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"

@@ -43,3 +43,10 @@ credentials.json
 
 # Historial local de VS Code
 .history/
+# Evidencias y archivos temporales de pruebas locales
+*-test-response.json
+test-*.json
+event-test.json
+reminder-response.json
+
+lambda-get-response.json
